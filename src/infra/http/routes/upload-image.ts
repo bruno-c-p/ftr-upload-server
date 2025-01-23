@@ -1,3 +1,4 @@
+import { uploadImage } from '@/app/functions/upload-image'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
@@ -7,21 +8,30 @@ export const uploadImageRoute: FastifyPluginAsyncZod = async server => {
     {
       schema: {
         summary: 'Upload an image',
-        body: z.object({
-          name: z.string(),
-        }),
+        consumes: ['multipart/form-data'],
         response: {
           201: z.object({
             uploadId: z.string(),
           }),
           400: z.object({
-            message: z.string().describe('Validation error'),
-            issues: z.object({}),
+            message: z.string(),
           }),
         },
       },
     },
     async (request, reply) => {
+      const MAX_FILE_SIZE = 1024 * 1024 * 2
+      const uploadedFile = await request.file({
+        limits: { fileSize: MAX_FILE_SIZE },
+      })
+      if (!uploadedFile) {
+        return reply.status(400).send({ message: 'File is required' })
+      }
+      await uploadImage({
+        fileName: uploadedFile.filename,
+        contentType: uploadedFile.mimetype,
+        contentStream: uploadedFile.file,
+      })
       return reply.send({ uploadId: '123' })
     }
   )

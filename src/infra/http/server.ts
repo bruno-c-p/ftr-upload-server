@@ -6,11 +6,11 @@ import { fastifySwaggerUi } from '@fastify/swagger-ui'
 import fastify from 'fastify'
 import {
   hasZodFastifySchemaValidationErrors,
-  jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { uploadImageRoute } from './routes/upload-image'
+import { transformSwaggerSchema } from './transform-swagger-schema'
 
 const server = fastify()
 server.setValidatorCompiler(validatorCompiler)
@@ -23,8 +23,7 @@ server.setErrorHandler((error, _request, reply) => {
       issues: error.validation,
     })
   }
-  // observability tool
-  console.error(error)
+  console.error(error) // observability tool
   return reply.status(500).send({ message: 'Internal server error' })
 })
 
@@ -40,7 +39,7 @@ server.register(fastifySwagger, {
       version: '1.0.0',
     },
   },
-  transform: jsonSchemaTransform,
+  transform: transformSwaggerSchema,
 })
 server.register(fastifySwaggerUi, {
   routePrefix: '/docs',
